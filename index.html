@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Chi Tiêu - Học Sinh</title>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    
+    <style>
+        /* Reset và thiết lập cơ bản */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Card chung */
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        /* Grid layout */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        /* Form nhập liệu */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Tổng quan */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+        }
+
+        .summary-item:nth-child(2) {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .summary-item:nth-child(3) {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .summary-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        /* Danh sách giao dịch */
+        .transaction-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: all 0.2s;
+        }
+
+        .transaction-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .transaction-info {
+            flex: 1;
+        }
+
+        .transaction-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .transaction-category {
+            font-size: 0.85rem;
+            color: #666;
+            background: #e0e7ff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .transaction-amount {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #f5576c;
+        }
+
+        .transaction-delete {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: background 0.2s;
+        }
+
+        .transaction-delete:hover {
+            background: #ee5a52;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Biểu đồ */
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Danh mục chi tiêu theo màu */
+        .category-an-uong { border-left-color: #ff6b6b; }
+        .category-hoc-tap { border-left-color: #4ecdc4; }
+        .category-di-chuyen { border-left-color: #45b7d1; }
+        .category-giai-tri { border-left-color: #f9ca24; }
+        .category-khoan-khac { border-left-color: #95afc0; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Scrollbar custom */
+        .transaction-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .transaction-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .transaction-list::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>💰 Dashboard Chi Tiêu</h1>
+            <p>Quản lý chi tiêu thông minh cho học sinh</p>
+        </div>
+
+        <!-- Grid chính -->
+        <div class="grid">
+            <!-- Form nhập liệu -->
+            <div class="card">
+                <h2 class="card-title">➕ Thêm Giao Dịch</h2>
+                <form id="transactionForm">
+                    <div class="form-group">
+                        <label for="transactionName">Tên khoản chi</label>
+                        <input type="text" id="transactionName" placeholder="Ví dụ: Ăn trưa" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="transactionAmount">Số tiền (VNĐ)</label>
+                        <input type="number" id="transactionAmount" placeholder="0" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="transactionCategory">Danh mục</label>
+                        <select id="transactionCategory" required>
+                            <option value="">-- Chọn danh mục --</option>
+                            <option value="an-uong">🍔 Ăn uống</option>
+                            <option value="hoc-tap">📚 Học tập</option>
+                            <option value="di-chuyen">🚌 Di chuyển</option>
+                            <option value="giai-tri">🎮 Giải trí</option>
+                            <option value="khoan-khac">📦 Khoản khác</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn">Thêm giao dịch</button>
+                </form>
+            </div>
+
+            <!-- Tổng quan -->
+            <div class="card">
+                <h2 class="card-title">📊 Tổng Quan</h2>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-label">Tổng chi tiêu</div>
+                        <div class="summary-value" id="totalExpense">0đ</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Số giao dịch</div>
+                        <div class="summary-value" id="totalTransactions">0</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">TB/giao dịch</div>
+                        <div class="summary-value" id="avgTransaction">0đ</div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 20px 0 10px 0; color: #555; font-size: 1.1rem;">Chi tiêu theo danh mục</h3>
+                <div id="categoryBreakdown"></div>
+            </div>
+        </div>
+
+        <!-- Danh sách giao dịch -->
+        <div class="card">
+            <h2 class="card-title">📝 Lịch Sử Giao Dịch</h2>
+            <div class="transaction-list" id="transactionList">
+                <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                    <p>Chưa có giao dịch nào. Hãy thêm giao dịch đầu tiên!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Biểu đồ -->
+        <div class="grid">
+            <div class="card">
+                <h2 class="card-title">📈 Biểu Đồ Tròn</h2>
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">📊 Biểu Đồ Cột</h2>
+                <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === KHỞI TẠO ===
+        const CATEGORIES = {
+            'an-uong': { name: 'Ăn uống', icon: '🍔', color: '#ff6b6b' },
+            'hoc-tap': { name: 'Học tập', icon: '📚', color: '#4ecdc4' },
+            'di-chuyen': { name: 'Di chuyển', icon: '🚌', color: '#45b7d1' },
+            'giai-tri': { name: 'Giải trí', icon: '🎮', color: '#f9ca24' },
+            'khoan-khac': { name: 'Khoản khác', icon: '📦', color: '#95afc0' }
+        };
+
+        let transactions = [];
+        let pieChart = null;
+        let barChart = null;
+
+        // === LOAD DỮ LIỆU TỪ LOCALSTORAGE ===
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('transactions');
+            if (saved) {
+                transactions = JSON.parse(saved);
+            }
+        }
+
+        // === LƯU VÀO LOCALSTORAGE ===
+        function saveToLocalStorage() {
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+        }
+
+        // === FORMAT TIỀN TỆ ===
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(amount);
+        }
+
+        // === THÊM GIAO DỊCH ===
+        function addTransaction(name, amount, category) {
+            const transaction = {
+                id: Date.now(),
+                name: name,
+                amount: parseFloat(amount),
+                category: category,
+                date: new Date().toISOString()
+            };
+            
+            transactions.push(transaction);
+            saveToLocalStorage();
+            updateUI();
+        }
+
+        // === XÓA GIAO DỊCH ===
+        function deleteTransaction(id) {
+            transactions = transactions.filter(t => t.id !== id);
+            saveToLocalStorage();
+            updateUI();
+        }
+
+        // === TÍNH TOÁN THỐNG KÊ ===
+        function calculateStats() {
+            const total = transactions.reduce((sum, t) => sum + t.amount, 0);
+            const count = transactions.length;
+            const average = count > 0 ? total / count : 0;
+            
+            // Tính theo danh mục
+            const byCategory = {};
+            Object.keys(CATEGORIES).forEach(key => {
+                byCategory[key] = 0;
+            });
+            
+            transactions.forEach(t => {
+                byCategory[t.category] += t.amount;
+            });
+            
+            return { total, count, average, byCategory };
+        }
+
+        // === CẬP NHẬT TỔNG QUAN ===
+        function updateSummary() {
+            const stats = calculateStats();
+            
+            document.getElementById('totalExpense').textContent = formatCurrency(stats.total);
+            document.getElementById('totalTransactions').textContent = stats.count;
+            document.getElementById('avgTransaction').textContent = formatCurrency(stats.average);
+            
+            // Cập nhật chi tiết theo danh mục
+            const categoryBreakdown = document.getElementById('categoryBreakdown');
+            let html = '';
+            
+            Object.keys(CATEGORIES).forEach(key => {
+                const amount = stats.byCategory[key];
+                const percentage = stats.total > 0 ? (amount / stats.total * 100).toFixed(1) : 0;
+                const cat = CATEGORIES[key];
+                
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; margin-bottom: 8px; background: #f8f9fa; border-radius: 6px;">
+                        <span style="font-weight: 500;">${cat.icon} ${cat.name}</span>
+                        <span style="font-weight: 600; color: ${cat.color};">${formatCurrency(amount)} (${percentage}%)</span>
+                    </div>
+                `;
+            });
+            
+            categoryBreakdown.innerHTML = html;
+        }
+
+        // === CẬP NHẬT DANH SÁCH GIAO DỊCH ===
+        function updateTransactionList() {
+            const list = document.getElementById('transactionList');
+            
+            if (transactions.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                        </svg>
+                        <p>Chưa có giao dịch nào. Hãy thêm giao dịch đầu tiên!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Xóa nội dung cũ
+            list.innerHTML = '';
+            
+            // Sắp xếp theo thời gian mới nhất
+            const sorted = [...transactions].sort((a, b) => b.id - a.id);
+            
+            // Tạo từng item bằng DOM thay vì innerHTML
+            sorted.forEach(t => {
+                const cat = CATEGORIES[t.category];
+                
+                // Tạo container
+                const item = document.createElement('div');
+                item.className = `transaction-item category-${t.category}`;
+                
+                // Phần thông tin
+                const info = document.createElement('div');
+                info.className = 'transaction-info';
+                
+                const name = document.createElement('div');
+                name.className = 'transaction-name';
+                name.textContent = `${cat.icon} ${t.name}`;
+                
+                const category = document.createElement('span');
+                category.className = 'transaction-category';
+                category.textContent = cat.name;
+                
+                info.appendChild(name);
+                info.appendChild(category);
+                
+                // Phần số tiền và nút xóa
+                const rightSection = document.createElement('div');
+                rightSection.style.display = 'flex';
+                rightSection.style.alignItems = 'center';
+                
+                const amount = document.createElement('div');
+                amount.className = 'transaction-amount';
+                amount.textContent = formatCurrency(t.amount);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'transaction-delete';
+                deleteBtn.textContent = '🗑️';
+                deleteBtn.addEventListener('click', () => {
+                    if (confirm('Bạn có chắc muốn xóa giao dịch này?')) {
+                        deleteTransaction(t.id);
+                    }
+                });
+                
+                rightSection.appendChild(amount);
+                rightSection.appendChild(deleteBtn);
+                
+                // Ghép lại
+                item.appendChild(info);
+                item.appendChild(rightSection);
+                list.appendChild(item);
+            });
+        }
+
+        // === CẬP NHẬT BIỂU ĐỒ ===
+        function updateCharts() {
+            const stats = calculateStats();
+            
+            // Dữ liệu cho biểu đồ
+            const labels = [];
+            const data = [];
+            const colors = [];
+            
+            Object.keys(CATEGORIES).forEach(key => {
+                if (stats.byCategory[key] > 0) {
+                    labels.push(CATEGORIES[key].name);
+                    data.push(stats.byCategory[key]);
+                    colors.push(CATEGORIES[key].color);
+                }
+            });
+            
+            // Biểu đồ tròn
+            if (pieChart) {
+                pieChart.destroy();
+            }
+            
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            pieChart = new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = formatCurrency(context.parsed);
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Biểu đồ cột
+            if (barChart) {
+                barChart.destroy();
+            }
+            
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            barChart = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Chi tiêu (VNĐ)',
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 0,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return new Intl.NumberFormat('vi-VN').format(value) + 'đ';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // === CẬP NHẬT TOÀN BỘ UI ===
+        function updateUI() {
+            updateSummary();
+            updateTransactionList();
+            updateCharts();
+        }
+
+        // === XỬ LÝ FORM ===
+        function initForm() {
+            const form = document.getElementById('transactionForm');
+            if (!form) {
+                console.error('Không tìm thấy form!');
+                return;
+            }
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('transactionName').value.trim();
+                const amount = document.getElementById('transactionAmount').value;
+                const category = document.getElementById('transactionCategory').value;
+                
+                // Validate
+                if (!name || !amount || !category) {
+                    alert('Vui lòng điền đầy đủ thông tin!');
+                    return;
+                }
+                
+                if (parseFloat(amount) <= 0) {
+                    alert('Số tiền phải lớn hơn 0!');
+                    return;
+                }
+                
+                // Thêm giao dịch
+                addTransaction(name, amount, category);
+                
+                // Reset form
+                this.reset();
+                
+                // Focus vào ô tên
+                document.getElementById('transactionName').focus();
+            });
+        }
+
+        // === KHỞI ĐỘNG ỨNG DỤNG ===
+        // Đảm bảo DOM đã load xong
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                loadFromLocalStorage();
+                updateUI();
+                initForm();
+            });
+        } else {
+            loadFromLocalStorage();
+            updateUI();
+            initForm();
+        }
+    </script>
+</body>
+</html>
